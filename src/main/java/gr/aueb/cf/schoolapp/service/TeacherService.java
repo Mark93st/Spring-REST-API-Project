@@ -2,6 +2,8 @@ package gr.aueb.cf.schoolapp.service;
 
 import gr.aueb.cf.schoolapp.core.exceptions.AppObjectAlreadyExists;
 import gr.aueb.cf.schoolapp.core.exceptions.AppObjectInvalidArgumentException;
+import gr.aueb.cf.schoolapp.core.filters.TeacherFilters;
+import gr.aueb.cf.schoolapp.core.specifications.TeacherSpecification;
 import gr.aueb.cf.schoolapp.dto.TeacherInsertDTO;
 import gr.aueb.cf.schoolapp.dto.TeacherReadOnlyDTO;
 import gr.aueb.cf.schoolapp.mapper.Mapper;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -112,6 +115,14 @@ public class TeacherService {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
         return teacherRepository.findAll(pageable).map(mapper::mapToTeacherReadOnlyDTO);
+    }
+
+    private Specification<Teacher> getSpecsFromFilters(TeacherFilters filters) {
+        return Specification
+                .where(TeacherSpecification.trStringFieldLike("uuid", filters.getUuid()))
+                .and(TeacherSpecification.teacherUserVatIs(filters.getUserVat()))
+                .and(TeacherSpecification.trPersonalInfoAmkaIs(filters.getUserAmka()))
+                .and(TeacherSpecification.trUserIsActive(filters.getActive()));
     }
 }
 
