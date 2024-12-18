@@ -1,28 +1,35 @@
 package gr.aueb.cf.schoolapp.rest;
 
-import gr.aueb.cf.schoolapp.core.exceptions.AppObjectAlreadyExists;
-import gr.aueb.cf.schoolapp.core.exceptions.AppObjectInvalidArgumentException;
-import gr.aueb.cf.schoolapp.core.exceptions.AppServerException;
-import gr.aueb.cf.schoolapp.core.exceptions.ValidationException;
+import gr.aueb.cf.schoolapp.core.exceptions.*;
+import gr.aueb.cf.schoolapp.core.filters.Paginated;
+import gr.aueb.cf.schoolapp.core.filters.TeacherFilters;
 import gr.aueb.cf.schoolapp.dto.TeacherInsertDTO;
 import gr.aueb.cf.schoolapp.dto.TeacherReadOnlyDTO;
+import gr.aueb.cf.schoolapp.mapper.Mapper;
 import gr.aueb.cf.schoolapp.service.TeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class TeacherRestController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TeacherRestController.class);
     private final TeacherService teacherService;
 
     @GetMapping("/teachers")
@@ -49,6 +56,32 @@ public class TeacherRestController {
             return new ResponseEntity<>(teacherReadOnlyDTO, HttpStatus.OK);
         } catch (IOException e) {
             throw new AppServerException("Attachment", "Attachment can not get uploaded");
+        }
+    }
+
+    @PostMapping("/teachers/all")
+    public ResponseEntity<List<TeacherReadOnlyDTO>> getTeachers(@Nullable @RequestBody TeacherFilters filters,
+                                                                Principal principal)
+            throws AppObjectNotFoundException, AppObjectNotAuthorizedException {
+        try {
+            if (filters == null) filters = TeacherFilters.builder().build();
+            return ResponseEntity.ok(teacherService.getTeachersFiltered(filters));
+        } catch (Exception e) {
+            LOGGER.error("ERROR: Could not get teachers.", e);
+            throw e;
+        }
+    }
+
+    @PostMapping("/teachers/all/paginated")
+    public ResponseEntity<Paginated<TeacherReadOnlyDTO>> getTeachersFilteredPaginated(@Nullable @RequestBody TeacherFilters filters,
+                                                                                      Principal principal)
+            throws AppObjectNotFoundException, AppObjectNotAuthorizedException {
+        try {
+            if (filters == null) filters = TeacherFilters.builder().build();
+            return ResponseEntity.ok(teacherService.getTeachersFilteredPaginated(filters));
+        } catch (Exception e) {
+            LOGGER.error("ERROR: Could not get teachers.", e);
+            throw e;
         }
     }
 }
